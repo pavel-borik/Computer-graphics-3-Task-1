@@ -43,13 +43,10 @@ public class JOGLApp {
 	    	testFrame.addWindowListener(new WindowAdapter() {
 				@Override
 				public void windowClosing(WindowEvent e) {
-					new Thread() {
-	                     @Override
-	                     public void run() {
-	                        if (animator.isStarted()) animator.stop();
-	                        System.exit(0);
-	                     }
-	                  }.start();
+					new Thread(() -> {
+                       if (animator.isStarted()) animator.stop();
+                       System.exit(0);
+                    }).start();
 				}
 			});
 	    	testFrame.setTitle(ren.getClass().getName());
