@@ -42,7 +42,7 @@ public class Renderer implements GLEventListener, MouseListener,
 		locMat = gl.glGetUniformLocation(shaderProgram, "mat");
 		locObjectIdentifier = gl.glGetUniformLocation(shaderProgram, "objectIdentifier");
 
-		cam = cam.withPosition(new Vec3D(50, 50, 10))
+		cam = cam.withPosition(new Vec3D(25, 25, 5))
 				.withAzimuth(Math.PI * 1.25)
 				.withZenith(Math.PI * -0.05);
 
@@ -73,9 +73,9 @@ public class Renderer implements GLEventListener, MouseListener,
 		//buffers.draw(GL2GL3.GL_TRIANGLES, shaderProgram);
 		buffers.draw(GL2GL3.GL_TRIANGLE_STRIP, shaderProgram);
 		
-		String text = this.getClass().getName();
-		textRenderer.drawStr2D(3, height - 20, text);
-		textRenderer.drawStr2D(width - 90, 3, " (c) PGRF UHK");
+
+		textRenderer.drawStr2D(3, height - 20, "PGRF3 - task 1");
+		textRenderer.drawStr2D(width - 90, 3, " (c) Pavel Borik");
 
 	}
 
