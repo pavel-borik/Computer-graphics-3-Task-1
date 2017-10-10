@@ -19,7 +19,8 @@ public class Renderer implements GLEventListener, MouseListener,
 	OGLBuffers buffers;
 	OGLTextRenderer textRenderer;
 
-	int shaderProgram, locMat;
+	int shaderProgram, locMat, locObjectIdentifier;
+	int objectIdentifier = 0;
 
 	Camera cam = new Camera();
 	Mat4 proj; // created in reshape()
@@ -39,6 +40,7 @@ public class Renderer implements GLEventListener, MouseListener,
 		createBuffers(gl);
 
 		locMat = gl.glGetUniformLocation(shaderProgram, "mat");
+		locObjectIdentifier = gl.glGetUniformLocation(shaderProgram, "objectIdentifier");
 
 		cam = cam.withPosition(new Vec3D(50, 50, 10))
 				.withAzimuth(Math.PI * 1.25)
@@ -58,13 +60,15 @@ public class Renderer implements GLEventListener, MouseListener,
 		
 		gl.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		gl.glClear(GL2GL3.GL_COLOR_BUFFER_BIT | GL2GL3.GL_DEPTH_BUFFER_BIT);
-		
-			gl.glUseProgram(shaderProgram);
+
+		gl.glUseProgram(shaderProgram);
 
 		gl.glUniformMatrix4fv(locMat, 1, false,
 				ToFloatArray.convert(cam.getViewMatrix().mul(proj)), 0);
 
-		gl.glPolygonMode(GL2GL3.GL_FRONT_AND_BACK, GL2GL3.GL_LINE);
+		gl.glUniform1i(locObjectIdentifier, objectIdentifier);
+
+		gl.glPolygonMode(GL2GL3.GL_FRONT_AND_BACK, GL2GL3.GL_FILL);
 
 		//buffers.draw(GL2GL3.GL_TRIANGLES, shaderProgram);
 		buffers.draw(GL2GL3.GL_TRIANGLE_STRIP, shaderProgram);
@@ -149,6 +153,10 @@ public class Renderer implements GLEventListener, MouseListener,
 				break;
 			case KeyEvent.VK_F:
 				cam = cam.mulRadius(1.1f);
+				break;
+			case KeyEvent.VK_K:
+				objectIdentifier++;
+				if (objectIdentifier == 3) objectIdentifier = 0;
 				break;
 		}
 	}
