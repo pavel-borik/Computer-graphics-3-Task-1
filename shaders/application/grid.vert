@@ -1,4 +1,3 @@
-//SPHERE shader
 #version 150
 in vec2 inPosition;
 out vec3 normal;

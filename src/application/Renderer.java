@@ -19,8 +19,9 @@ public class Renderer implements GLEventListener, MouseListener,
 	OGLBuffers buffers;
 	OGLTextRenderer textRenderer;
 
-	int shaderProgram, locMat, locObjectIdentifier;
+	int shaderProgram, locMat, locObjectIdentifier, locEye;
 	int objectIdentifier = 0;
+	Vec3D eye;
 
 	Camera cam = new Camera();
 	Mat4 proj; // created in reshape()
@@ -34,17 +35,20 @@ public class Renderer implements GLEventListener, MouseListener,
 		
 		textRenderer = new OGLTextRenderer(gl, glDrawable.getSurfaceWidth(), glDrawable.getSurfaceHeight());
 
-		shaderProgram = ShaderUtils.loadProgram(gl, "/application/grid.vert",
-				"/application/grid.frag",
-				null,null,null,null);
+
+		shaderProgram = ShaderUtils.loadProgram(gl, "/application/phong");
+
+
 		createBuffers(gl);
 
 		locMat = gl.glGetUniformLocation(shaderProgram, "mat");
 		locObjectIdentifier = gl.glGetUniformLocation(shaderProgram, "objectIdentifier");
+		locEye=gl.glGetUniformLocation(shaderProgram, "eyePos");
 
 		cam = cam.withPosition(new Vec3D(25, 25, 5))
 				.withAzimuth(Math.PI * 1.25)
 				.withZenith(Math.PI * -0.05);
+		eye = cam.getEye();
 
 		gl.glEnable(GL2GL3.GL_DEPTH_TEST);
 	}
@@ -67,6 +71,8 @@ public class Renderer implements GLEventListener, MouseListener,
 				ToFloatArray.convert(cam.getViewMatrix().mul(proj)), 0);
 
 		gl.glUniform1i(locObjectIdentifier, objectIdentifier);
+
+		gl.glUniform3fv(locEye, 1, ToFloatArray.convert(eye), 0);
 
 		gl.glPolygonMode(GL2GL3.GL_FRONT_AND_BACK, GL2GL3.GL_FILL);
 
@@ -118,6 +124,7 @@ public class Renderer implements GLEventListener, MouseListener,
 			.addZenith((double) Math.PI * (e.getY() - oy) / width);
 		ox = e.getX();
 		oy = e.getY();
+		eye = cam.getEye();
 	}
 
 	@Override
