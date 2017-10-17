@@ -7,6 +7,6 @@ void main() {
     float f = dot(normalize(vec3(0.0,1.0,1.0)),nNormal);
     f = max(f,0.0);
 	//outColor.rgb = vec3(f);
-	outColor.rgb = color;
+	outColor.rgb = nNormal;
 	outColor.a = 1.0;
 }
