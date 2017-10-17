@@ -39,7 +39,7 @@ public class GridFactory {
 
         OGLBuffers buffers = new OGLBuffers(gl, vertexBufferData, attributes, indexBufferData);
 
-
+/*
         for (float f : vertexBufferData ) {
             System.out.print(f + " ");
         }
@@ -50,7 +50,7 @@ public class GridFactory {
 
         System.out.println();
         System.out.println(indexBufferData.length + " " + vertexBufferData.length);
-
+*/
         return buffers;
     }
 

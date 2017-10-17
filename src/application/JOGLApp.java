@@ -17,7 +17,7 @@ public class JOGLApp {
 	public void start() {
 		try {
 			Frame testFrame = new Frame("TestFrame");
-			testFrame.setSize(512, 384);
+			testFrame.setSize(800, 600);
 
 			// setup OpenGL version
 	    	GLProfile profile = GLProfile.getMaximum(true);
