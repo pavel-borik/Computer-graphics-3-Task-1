@@ -1,7 +1,8 @@
-#version 120
+#version 330
 in vec2 inPosition;
-varying vec3 viewDirection, lightDirection, normal;
-varying float dist;
+out vec3 viewDirection, lightDirection, normal;
+out float dist;
+out vec4 position;
 uniform int object;
 uniform mat4 modelMat, viewMat, projMat;
 uniform vec3 eyePos;
@@ -12,20 +13,25 @@ vec3 createObject(vec2 uv);
 vec3 normalDiff (vec2 uv);
 
 void main() {
-    vec4 position = vec4(createObject(inPosition),1.0 );
+    mat4 modelView = viewMat * modelMat;
     mat4 mvp = projMat * viewMat * modelMat;
+
+    position = vec4(createObject(inPosition),1.0 );
+
+    vec4 lightPosition = vec4(-10.0, 5.0, 2.0, 1.0);
 
     normal = normalDiff(inPosition);
     normal = (dot(normal,position.xyz) < 0.0) ? normal : -normal;
-
-    vec4 lightPosition = vec4(-20.0, 10.0, 4.0, 1.0);
+    // normal = normalize(transpose(inverse(mat3(modelMat))) * normal);
     //vec4 objectPosition =  gl_ModelViewMatrix * position;
-    vec4 objectPosition =  viewMat * modelMat * position;
 
-    lightDirection = normalize(lightPosition.xyz - objectPosition.xyz);
-    viewDirection = - objectPosition.xyz;
+    vec4 objectPosition =  modelMat * position;
+
+    lightDirection = lightPosition.xyz - objectPosition.xyz;
+    viewDirection = -objectPosition.xyz;
+
     dist = length(lightDirection);
-	gl_Position = mvp * vec4(createObject(inPosition), 1.0);
+	gl_Position = mvp * position;
 }
 
 vec3 createObject (vec2 uv) {
@@ -44,6 +50,11 @@ vec3 createObject (vec2 uv) {
              s = 2*PI*uv.x;
              t = 17*uv.y;
              return vec3(t, 6/pow(t+1,0.7)*cos(s), 6/pow(t+1,0.7)*sin(s));
+        case 3:
+             float x = uv.x;
+             float y =uv.y;
+             float z = 0;
+             return vec3(x,y,z);
     }
     return vec3(0,0,0);
 }

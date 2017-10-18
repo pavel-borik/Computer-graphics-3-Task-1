@@ -18,6 +18,9 @@ public class Renderer implements GLEventListener, MouseListener,
 
 	int shaderProgram, locProjMat, locModelMat, locViewMat, locEye, locObj;
 
+	OGLTexture2D texture;
+	OGLTexture2D.Viewer textureViewer;
+
 	int objSwitch = 0;
 	Vec3D eye;
 
@@ -44,6 +47,8 @@ public class Renderer implements GLEventListener, MouseListener,
 
 		locEye = gl.glGetUniformLocation(shaderProgram, "eyePos");
 
+		texture = new OGLTexture2D(gl, "/textures/jupiter.jpg");
+
 		cam = cam.withPosition(new Vec3D(25, 25, 5))
 				.withAzimuth(Math.PI * 1.25)
 				.withZenith(Math.PI * -0.05);
@@ -53,6 +58,7 @@ public class Renderer implements GLEventListener, MouseListener,
 		eye = cam.getEye();
 
 		gl.glEnable(GL2GL3.GL_DEPTH_TEST);
+		textureViewer = new OGLTexture2D.Viewer(gl);
 	}
 
 	@Override
@@ -76,12 +82,15 @@ public class Renderer implements GLEventListener, MouseListener,
 		gl.glUniform1i(locObj,objSwitch);
 		gl.glUniform3fv(locEye, 1, ToFloatArray.convert(eye), 0);
 
+		texture.bind(shaderProgram, "texture0", 0);
+
+
 		gl.glPolygonMode(GL2GL3.GL_FRONT_AND_BACK, GL2GL3.GL_FILL);
 
 		//buffers.draw(GL2GL3.GL_TRIANGLES, shaderProgram);
 		buffers.draw(GL2GL3.GL_TRIANGLE_STRIP, shaderProgram);
-		
 
+		textureViewer.view(texture, -1, -1, 0.5);
 		textRenderer.drawStr2D(3, height - 20, "PGRF3 - task 1");
 		textRenderer.drawStr2D(width - 90, 3, " (c) Pavel Borik");
 
@@ -174,7 +183,7 @@ public class Renderer implements GLEventListener, MouseListener,
 				view = cam.getViewMatrix();
 				break;
 			case KeyEvent.VK_K:
-				objSwitch = (objSwitch + 1) % 3;
+				objSwitch = (objSwitch + 1) % 4;
 				System.out.println(objSwitch);
 				break;
 		}
