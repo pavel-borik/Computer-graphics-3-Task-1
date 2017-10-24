@@ -17,8 +17,17 @@ void main( void ) {
     vec2 texCoord;
     texCoord.y = acos(position.z/7)/PI;
     texCoord.x = atan(position.x/position.y)/2.0/PI-0.25;
-    if (sign(position.y) <= 0.0)
-        texCoord.x+=0.5;
+
+
+    if (sign(position.x)>0){
+       texCoord.x+=0.5;
+       if (sign(position.y)>=0) texCoord.x+=0.50;
+    }
+    else{
+       texCoord.x+=0.5;
+        if (sign(position.y)>=0)texCoord.x+=0.50;;
+    }
+
 
     // texCoord.x = position.x;
     // texCoord.y = position.y;
