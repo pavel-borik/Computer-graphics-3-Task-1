@@ -41,7 +41,7 @@ vec3 createObject (vec2 uv) {
             s = 2 * PI * uv.x; //theta
             t = PI * uv.y; //phi
             r = 7;
-            return vec3(r * cos(t)*sin(s), r * sin(t)*sin(s), r * cos(s));
+            return vec3(r * cos(s)*sin(t), r * sin(t)*sin(s), r * cos(t));
         //Sombrero - Cylindrical
         case 1:
             s = 2* PI * uv.x;

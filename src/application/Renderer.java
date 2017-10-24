@@ -45,7 +45,7 @@ public class Renderer implements GLEventListener, MouseListener,
 		locObj = gl.glGetUniformLocation(shaderProgram, "object");
 		locEye = gl.glGetUniformLocation(shaderProgram, "eyePos");
 
-		texture = new OGLTexture2D(gl, "/textures/jupiter.jpg");
+		texture = new OGLTexture2D(gl, "/textures/earth.jpg");
 
 		cam = cam.withPosition(new Vec3D(25, 25, 5))
 				.withAzimuth(Math.PI * 1.25)
