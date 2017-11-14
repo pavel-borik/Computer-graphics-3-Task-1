@@ -71,20 +71,12 @@ public class Renderer implements GLEventListener, MouseListener,
 	@Override
 	public void display(GLAutoDrawable glDrawable) {
 		GL2GL3 gl = glDrawable.getGL().getGL2GL3();
-		String text = "";
 
 		switch (shaderMode) {
 			case 0:
-				gl.glUseProgram(shaderProgram2);
-				text = ( "Controls: [LMB] camera, " +
-					"[WASD] camera movement, [V] change shader, [B] fill mode, [E] change object, [OP] rotation, [JK] translation");
-				break;
+				gl.glUseProgram(shaderProgram2); break;
 			case 1:
-				gl.glUseProgram(shaderProgram);
-				text = ( "Controls: [LMB] camera, " +
-						"[WASD] camera movement, [V] change shader, [B] fill mode, [T] texturing mode, [OP] rotation, [JK] translation");
-				break;
-
+				gl.glUseProgram(shaderProgram); break;
 		}
 
 		gl.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -112,7 +104,6 @@ public class Renderer implements GLEventListener, MouseListener,
 		gl.glUniform1i(locObj2, objSwitch);
 		gl.glUniform3fv(locEye2, 1, ToFloatArray.convert(cam.getEye()), 0);
 
-
 		switch (shaderMode) {
 			case 0:
 				texture3.bind(shaderProgram2, "texture0", 3);
@@ -123,7 +114,6 @@ public class Renderer implements GLEventListener, MouseListener,
 				texture1.bind(shaderProgram, "texture1", 1);
 				texture2.bind(shaderProgram, "texture2", 2);
 				break;
-
 		}
 
 		gl.glPolygonMode(GL2GL3.GL_FRONT_AND_BACK, polygonMode);
@@ -133,12 +123,7 @@ public class Renderer implements GLEventListener, MouseListener,
 
 		//textureViewer.view(texture, -1, -1, 0.5);
 
-		if(shaderMode == 1 && texturingMode == 0) textRenderer.drawStr2D(width - 895, 3, "Parallax mapping");
-		if(shaderMode == 1 && texturingMode == 1) textRenderer.drawStr2D(width - 895, 3, "Normal mapping");
-
-		textRenderer.drawStr2D(3, height - 20, "PGRF3 - task 1 " + text);
-		textRenderer.drawStr2D(width - 90, 3, " (c) Pavel Borik");
-
+		drawStrings();
 	}
 
 	@Override
@@ -258,4 +243,20 @@ public class Renderer implements GLEventListener, MouseListener,
 		gl.glDeleteProgram(shaderProgram);
 	}
 
+	private void drawStrings() {
+		switch (shaderMode) {
+			case 0:
+				textRenderer.drawStr2D(3, height - 15, "PGRF3 - task 1 | Controls: [LMB] camera, " +
+						"[WASD] camera movement, [V] change shader, [B] fill mode, [E] change object, [OP] rotation, [JK] translation");
+				break;
+			case 1:
+				textRenderer.drawStr2D(3, height - 15, "PGRF3 - task 1 | Controls: [LMB] camera, " +
+						"[WASD] camera movement, [V] change shader, [B] fill mode, [T] texturing mode, [OP] rotation, [JK] translation");
+				if(texturingMode == 0) textRenderer.drawStr2D(width - 895, 3, "Parallax mapping");
+				if(texturingMode == 1) textRenderer.drawStr2D(width - 895, 3, "Normal mapping");
+				break;
+		}
+
+		textRenderer.drawStr2D(width - 90, 3, " (c) Pavel Borik");
+	}
 }
