@@ -11,19 +11,20 @@ import java.awt.event.*;
 public class Renderer implements GLEventListener, MouseListener,
 		MouseMotionListener, KeyListener {
 
-	OGLBuffers buffers;
+	OGLBuffers buffer;
 	OGLTextRenderer textRenderer;
 
 	int width, height, ox, oy;
-	int shaderProgram, shaderProgram2, locProjMat, locModelMat, locViewMat, locEye, locObj;
-	int objSwitch = 0, shaderMode = 0;
-
-	OGLTexture2D texture;
+	int shaderProgram, shaderProgram2;
+	int locProjMat, locModelMat, locViewMat, locEye, locTexMode;
+	int locProjMat2, locModelMat2, locViewMat2, locEye2, locObj2;
+	int objSwitch = 0, shaderMode = 0, texturingMode = 0;
+	int polygonMode = GL2GL3.GL_FILL;
+	OGLTexture2D texture0, texture1, texture2, texture3;
 	OGLTexture2D.Viewer textureViewer;
 
-	Vec3D eye;
 	Camera cam = new Camera();
-	Mat4 model, view, proj;
+	Mat4 model, proj;
 
 	@Override
 	public void init(GLAutoDrawable glDrawable) {
@@ -34,26 +35,34 @@ public class Renderer implements GLEventListener, MouseListener,
 		
 		textRenderer = new OGLTextRenderer(gl, glDrawable.getSurfaceWidth(), glDrawable.getSurfaceHeight());
 
-		shaderProgram = ShaderUtils.loadProgram(gl, "/application/phong");
-		//shaderProgram2 = ShaderUtils.loadProgram(gl, "/application/perVertex");
+		shaderProgram = ShaderUtils.loadProgram(gl, "/application/textureMapping");
+		shaderProgram2 = ShaderUtils.loadProgram(gl, "/application/phong");
 
-		buffers = GridFactory.generateGrid(gl, 50, 50, TopologyType.TRIANGLES);
+		//buffer = GridFactory.generateGrid(gl, 50, 50, TopologyType.TRIANGLES);
+		buffer = MeshGenerator.generateGrid(gl, 50, 50,"inPosition");
 
 		locModelMat = gl.glGetUniformLocation(shaderProgram, "modelMat");
 		locViewMat = gl.glGetUniformLocation(shaderProgram, "viewMat");
 		locProjMat = gl.glGetUniformLocation(shaderProgram, "projMat");
-		locObj = gl.glGetUniformLocation(shaderProgram, "object");
 		locEye = gl.glGetUniformLocation(shaderProgram, "eyePos");
+		locTexMode = gl.glGetUniformLocation(shaderProgram, "texMode");
 
-		texture = new OGLTexture2D(gl, "/textures/earth.jpg");
+		locObj2 = gl.glGetUniformLocation(shaderProgram2, "object");
+		locModelMat2 = gl.glGetUniformLocation(shaderProgram2, "modelMat");
+		locViewMat2 = gl.glGetUniformLocation(shaderProgram2, "viewMat");
+		locProjMat2 = gl.glGetUniformLocation(shaderProgram2, "projMat");
+		locEye2 = gl.glGetUniformLocation(shaderProgram2, "eyePos");
+
+		texture0 = new OGLTexture2D(gl, "/textures/bricks.jpg");
+		texture1 = new OGLTexture2D(gl, "/textures/bricksn.png");
+		texture2 = new OGLTexture2D(gl, "/textures/bricksh.png");
+		texture3 = new OGLTexture2D(gl, "/textures/jupiter.jpg");
 
 		cam = cam.withPosition(new Vec3D(25, 25, 5))
 				.withAzimuth(Math.PI * 1.25)
 				.withZenith(Math.PI * -0.05);
-		view = cam.getViewMatrix();
 
 		model = new Mat4Identity();
-		eye = cam.getEye();
 
 		gl.glEnable(GL2GL3.GL_DEPTH_TEST);
 		textureViewer = new OGLTexture2D.Viewer(gl);
@@ -62,12 +71,20 @@ public class Renderer implements GLEventListener, MouseListener,
 	@Override
 	public void display(GLAutoDrawable glDrawable) {
 		GL2GL3 gl = glDrawable.getGL().getGL2GL3();
+		String text = "";
 
 		switch (shaderMode) {
 			case 0:
-				gl.glUseProgram(shaderProgram); break;
+				gl.glUseProgram(shaderProgram2);
+				text = ( "Controls: [LMB] camera, " +
+					"[WASD] camera movement, [V] change shader, [B] fill mode, [E] change object, [OP] rotation, [JK] translation");
+				break;
 			case 1:
-				gl.glUseProgram(shaderProgram2); break;
+				gl.glUseProgram(shaderProgram);
+				text = ( "Controls: [LMB] camera, " +
+						"[WASD] camera movement, [V] change shader, [B] fill mode, [T] texturing mode, [OP] rotation, [JK] translation");
+				break;
+
 		}
 
 		gl.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -77,24 +94,48 @@ public class Renderer implements GLEventListener, MouseListener,
 				ToFloatArray.convert(model), 0);
 
 		gl.glUniformMatrix4fv(locViewMat, 1, false,
-				ToFloatArray.convert(view), 0);
+				ToFloatArray.convert(cam.getViewMatrix()), 0);
 
 		gl.glUniformMatrix4fv(locProjMat, 1, false,
 				ToFloatArray.convert(proj), 0);
-		gl.glUniform1i(locObj, objSwitch);
-		gl.glUniform3fv(locEye, 1, ToFloatArray.convert(eye), 0);
+		gl.glUniform3fv(locEye, 1, ToFloatArray.convert(cam.getEye()), 0);
+		gl.glUniform1i(locTexMode, texturingMode);
 
-		texture.bind(shaderProgram, "texture0", 0);
+		gl.glUniformMatrix4fv(locModelMat2, 1, false,
+				ToFloatArray.convert(model), 0);
 
-		gl.glPolygonMode(GL2GL3.GL_FRONT_AND_BACK, GL2GL3.GL_FILL);
+		gl.glUniformMatrix4fv(locViewMat2, 1, false,
+				ToFloatArray.convert(cam.getViewMatrix()), 0);
 
-		buffers.draw(GL2GL3.GL_TRIANGLES, shaderProgram);
-		//buffers.draw(GL2GL3.GL_TRIANGLE_STRIP, shaderProgram);
+		gl.glUniformMatrix4fv(locProjMat2, 1, false,
+				ToFloatArray.convert(proj), 0);
+		gl.glUniform1i(locObj2, objSwitch);
+		gl.glUniform3fv(locEye2, 1, ToFloatArray.convert(cam.getEye()), 0);
 
-		textureViewer.view(texture, -1, -1, 0.5);
 
-		String text = new String(this.getClass().getName() + ": [LMB] camera, " +
-				"[WASD] camera movement, [E] change object, [OP] rotation, [JK] translation");
+		switch (shaderMode) {
+			case 0:
+				texture3.bind(shaderProgram2, "texture0", 3);
+
+				break;
+			case 1:
+				texture0.bind(shaderProgram, "texture0", 0);
+				texture1.bind(shaderProgram, "texture1", 1);
+				texture2.bind(shaderProgram, "texture2", 2);
+				break;
+
+		}
+
+		gl.glPolygonMode(GL2GL3.GL_FRONT_AND_BACK, polygonMode);
+
+		buffer.draw(GL2GL3.GL_TRIANGLES, shaderProgram);
+		//buffer.draw(GL2GL3.GL_TRIANGLE_STRIP, shaderProgram);
+
+		//textureViewer.view(texture, -1, -1, 0.5);
+
+		if(shaderMode == 1 && texturingMode == 0) textRenderer.drawStr2D(width - 895, 3, "Parallax mapping");
+		if(shaderMode == 1 && texturingMode == 1) textRenderer.drawStr2D(width - 895, 3, "Normal mapping");
+
 		textRenderer.drawStr2D(3, height - 20, "PGRF3 - task 1 " + text);
 		textRenderer.drawStr2D(width - 90, 3, " (c) Pavel Borik");
 
@@ -139,8 +180,6 @@ public class Renderer implements GLEventListener, MouseListener,
 			.addZenith((double) Math.PI * (e.getY() - oy) / width);
 		ox = e.getX();
 		oy = e.getY();
-		view = cam.getViewMatrix();
-		eye = cam.getEye();
 	}
 
 	@Override
@@ -152,43 +191,33 @@ public class Renderer implements GLEventListener, MouseListener,
 		switch (e.getKeyCode()) {
 			case KeyEvent.VK_W:
 				cam = cam.forward(0.5);
-				view = cam.getViewMatrix();
 				break;
 			case KeyEvent.VK_D:
 				cam = cam.right(0.5);
-				view = cam.getViewMatrix();
 				break;
 			case KeyEvent.VK_S:
 				cam = cam.backward(0.5);
-				view = cam.getViewMatrix();
 				break;
 			case KeyEvent.VK_A:
 				cam = cam.left(0.5);
-				view = cam.getViewMatrix();
 				break;
 			case KeyEvent.VK_CONTROL:
 				cam = cam.down(0.5);
-				view = cam.getViewMatrix();
 				break;
 			case KeyEvent.VK_SHIFT:
 				cam = cam.up(0.5);
-				view = cam.getViewMatrix();
 				break;
 			case KeyEvent.VK_SPACE:
 				cam = cam.withFirstPerson(!cam.getFirstPerson());
-				view = cam.getViewMatrix();
 				break;
 			case KeyEvent.VK_R:
 				cam = cam.mulRadius(0.9f);
-				view = cam.getViewMatrix();
 				break;
 			case KeyEvent.VK_F:
 				cam = cam.mulRadius(1.1f);
-				view = cam.getViewMatrix();
 				break;
 			case KeyEvent.VK_E:
 				objSwitch = (objSwitch + 1) % 7;
-				System.out.println(objSwitch);
 				break;
 			case KeyEvent.VK_J:
 				model = model.mul(new Mat4Transl(0,.5,0));
@@ -203,10 +232,15 @@ public class Renderer implements GLEventListener, MouseListener,
 				model = model.mul(new Mat4RotY(0.4));
 				break;
 			case KeyEvent.VK_V:
-				//shaderMode = (shaderMode+1)%2;
-				System.out.println(shaderMode);
+				shaderMode = (shaderMode + 1) % 2;
 				break;
-
+			case KeyEvent.VK_B:
+				polygonMode = polygonMode == GL2GL3.GL_FILL ? GL2GL3.GL_LINE : GL2GL3.GL_FILL;
+				break;
+			case KeyEvent.VK_T:
+				texturingMode = (texturingMode + 1) % 2;
+				System.out.println(texturingMode);
+				break;
 		}
 	}
 
