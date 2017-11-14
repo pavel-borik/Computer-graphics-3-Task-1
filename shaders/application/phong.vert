@@ -7,7 +7,7 @@ uniform int object;
 uniform mat4 modelMat, viewMat, projMat;
 uniform vec3 eyePos;
 const float PI = 3.1415926535897932384626433832795;
-
+out vec2 texCoord;
 vec3 createObject(vec2 uv);
 vec3 normalDiff (vec2 uv);
 
@@ -20,17 +20,18 @@ void main() {
     position = vec4(createObject(inPosition),1.0 );
 
     normal = normalDiff(inPosition);
-    normal = (dot(normal,position.xyz) < 0.0) ? -normal : normal;
+    //normal = (dot(normal,position.xyz) < 0.0) ? -normal : normal;
     normal = normalMat * normal;
 
-    //vec4 objectPosition =  gl_ModelViewMatrix * position;
-    vec4 objectPosition =  modelView * position;
-
-    lightDirection = lightPosition.xyz - objectPosition.xyz;
-    viewDirection = -normalize(objectPosition.xyz);
+    vec4 vObjectPosition =  modelView * position;
+    vec3 vLight = mat3(viewMat) * lightPosition.xyz;
+    //vec3 vLight = lightPosition.xyz;
+    lightDirection = vLight - vObjectPosition.xyz;
+    viewDirection = -vObjectPosition.xyz;
 
     dist = length(lightDirection);
 	gl_Position = mvp * position;
+	texCoord = vec2(inPosition.x, 1-inPosition.y);
 }
 
 vec3 createObject (vec2 uv) {
@@ -38,16 +39,16 @@ vec3 createObject (vec2 uv) {
     switch(object) {
         //Sphere - Spherical
         case 0:
-            s = 2 * PI * uv.x; //theta
-            t = PI * uv.y; //phi
-            r = 7;
-            return vec3(r * cos(s)*sin(t), r * sin(t)*sin(s), r * cos(t));
+            s = PI * 0.5 - PI*uv.y; //theta
+            t = PI * 2 * uv.x; //phi
+            r = 5;
+            return vec3(r * cos(s)*sin(t), r * cos(s)*cos(t), r * sin(s));
         //Sombrero - Cylindrical
         case 1:
             s = 2* PI * uv.x;
             t = 2* PI * uv.y;
             r = t;
-            return vec3(r * cos(s), r * sin(s) ,2*sin(t));
+            return vec3(r * sin(s), r * cos(s) ,2*cos(t));
         // Trumpet - Parametric XYZ
         case 2:
              s = 2*PI*uv.x;
@@ -58,13 +59,13 @@ vec3 createObject (vec2 uv) {
              x = (uv.x-0.5)*2;
              y = (uv.y-0.5)*2;
              z = 0.5*cos(sqrt(20*x*x+20*y*y));
-             return vec3(x,y,z);
+             return vec3(2*x,5*y,5*z);
         // Cartesian II
         case 4:
             x = (uv.x-0.5)*2;
             y = (uv.y-0.5)*2;
             z = 0.5*sin(sqrt(20*x*x+20*y*y));
-            return vec3(x,y,z);
+            return vec3(5*x,5*y,5*z);
         // Torus - Parametric XYZ
         case 5:
             s = 2* PI * uv.x;
@@ -75,7 +76,7 @@ vec3 createObject (vec2 uv) {
             s = 2* PI * uv.x;
             t = 2* PI * uv.y;
             r = (1+max(sin(t),0))*2;
-            return vec3(r * cos(s), r * sin(s), 3-t);
+            return vec3(r * sin(s), r * cos(s), 3-t);
     }
     return vec3(0,0,0);
 }
