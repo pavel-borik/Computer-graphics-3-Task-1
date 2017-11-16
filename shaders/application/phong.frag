@@ -1,11 +1,11 @@
 #version 330
 in vec3 viewDirection, lightDirection, normal;
 in float dist;
-in vec4 position;
+in vec4 position, vertColor;
 in vec2 texCoord;
 const float PI = 3.1415926535897932384626433832795;
 uniform sampler2D texture0;
-uniform int object;
+uniform int object, lightMode;
 uniform vec3 eyePos;
 out vec4 outColor;
 
@@ -23,8 +23,6 @@ void main( void ) {
         case 6: baseColor = vec4(1.0, 0.5, 1.0, 1.0); break;
     }
     float specularPower = 28;
-
-
 
 /*
     vec2 texCoord;
@@ -66,8 +64,9 @@ void main( void ) {
 
     float NDotL = dot(nd, ld);
     if (NDotL > 0.0){
-        vec3 reflection = normalize( ( ( 2.0 * nd ) * NDotL ) - ld );
-        float RDotV = max( 0.0, dot( reflection, vd ) );
+        //vec3 reflection = normalize( ( ( 2.0 * nd ) * NDotL ) - ld );
+        //float RDotV = max( 0.0, dot( reflection, vd ) );
+
         vec3 halfVector = normalize( ld + vd);
         float NDotH = max( 0.0, dot( nd, halfVector ) );
 
@@ -83,7 +82,6 @@ void main( void ) {
     }
 
     if(object == 0) {
-
         if (spotEffect < (1 - spotCutOff)) {
             outColor = totalAmbient*texColor +att*(totalDiffuse*texColor + totalSpecular);
         } else {
@@ -101,6 +99,8 @@ void main( void ) {
        }
 
     }
+
+    if(lightMode == 1) outColor = vertColor;
     //outColor = totalAmbient*color +att*(totalDiffuse*color + totalSpecular);
     //outColor = color;
 }

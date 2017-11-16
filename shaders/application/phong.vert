@@ -8,11 +8,12 @@ uniform mat4 modelMat, viewMat, projMat;
 uniform vec3 eyePos;
 const float PI = 3.1415926535897932384626433832795;
 out vec2 texCoord;
+out vec4 vertColor;
 vec3 createObject(vec2 uv);
 vec3 normalDiff (vec2 uv);
 
+void calculateLightPerVertex();
 void main() {
-
     vec4 lightPosition = vec4(-10.0, 5.0, 2.0, 1.0);
     mat4 modelView = viewMat * modelMat;
     mat4 mvp = projMat * viewMat * modelMat;
@@ -31,7 +32,9 @@ void main() {
 
     dist = length(lightDirection);
 	gl_Position = mvp * position;
-	texCoord = vec2(inPosition.x, 1-inPosition.y);
+	texCoord = 1-inPosition;
+
+	calculateLightPerVertex();
 }
 
 vec3 createObject (vec2 uv) {
@@ -48,7 +51,7 @@ vec3 createObject (vec2 uv) {
             s = 2* PI * uv.x;
             t = 2* PI * uv.y;
             r = t;
-            return vec3(r * sin(s), r * cos(s) ,2*cos(t));
+            return vec3(r * cos(s), r * sin(s) ,2*sin(t));
         // Trumpet - Parametric XYZ
         case 2:
              s = 2*PI*uv.x;
@@ -85,5 +88,62 @@ vec3 normalDiff (vec2 uv){
     float delta = 0.0001;
     vec3 dzdu = (createObject(uv+vec2(delta,0))-createObject(uv-vec2(delta,0)))/delta;
     vec3 dzdv = (createObject(uv+vec2(0,delta))-createObject(uv-vec2(0,delta)))/delta;
+
+    if(object == 1) return cross(dzdv,dzdu);
     return cross(dzdu,dzdv);
+}
+
+void calculateLightPerVertex() {
+    vec4 ambient = vec4(0.1,0.1, 0.1, 1.0);
+    vec4 specular = vec4(0.3, 0.3, 0.3, 1.0);
+    vec4 diffuse = vec4(0.7, 0.7,0.7,1.0);
+    vec4 baseColor = vec4(0.0);
+    switch(object) {
+        case 0: baseColor = vec4(0.7, 0.0, 0.5, 1.0); break;
+        case 1: baseColor = vec4(1.0, 0.0, 0.0, 1.0); break;
+        case 2: baseColor = vec4(1.0, 1.0, 0.0, 1.0); break;
+        case 3: baseColor = vec4(0.2, 0.2, 0.9, 1.0); break;
+        case 4: baseColor = vec4(0.5, 0.8, 0.2, 1.0); break;
+        case 5: baseColor = vec4(1.0, 0.5, 0.0, 1.0); break;
+        case 6: baseColor = vec4(1.0, 0.5, 1.0, 1.0); break;
+    }
+    float specularPower = 28;
+
+
+    vec3 ld = normalize( lightDirection );
+    vec3 nd = normalize( normal );
+    vec3 vd = normalize( viewDirection );
+
+    float spotCutOff = 0.5;
+    vec3 spotDirection = vec3(0,0,0);
+    float spotEffect = max(dot(normalize(spotDirection),normalize(-ld)),0);
+
+    vec4 totalAmbient=vec4(ambient * baseColor);
+    vec4 totalDiffuse = vec4(0.0);
+    vec4 totalSpecular = vec4(0.0);
+    float att;
+
+    float NDotL = dot(nd, ld);
+    if (NDotL > 0.0){
+        vec3 halfVector = normalize( ld + vd);
+        float NDotH = max( 0.0, dot( nd, halfVector ) );
+
+
+        totalDiffuse = diffuse * NDotL * baseColor;
+
+        att = 1.0 / (1.0 + 0.01*dist + 0.001*dist*dist);
+        totalSpecular = specular * (pow(NDotH, specularPower));
+
+    }
+
+
+    vertColor = totalAmbient +att*(totalDiffuse + totalSpecular);
+    if (spotEffect < (1 - spotCutOff)) {
+        vertColor = totalAmbient +att*(totalDiffuse + totalSpecular);
+    } else {
+        vertColor = totalAmbient;
+    }
+
+
+
 }
