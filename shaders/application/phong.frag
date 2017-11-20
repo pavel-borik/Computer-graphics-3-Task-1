@@ -7,41 +7,17 @@ const float PI = 3.1415926535897932384626433832795;
 uniform sampler2D texture0;
 uniform int object, lightMode;
 uniform vec3 eyePos;
+uniform vec3 baseCol;
 out vec4 outColor;
 
 void main( void ) {
     vec4 ambient = vec4(0.1,0.1, 0.1, 1.0);
     vec4 specular = vec4(0.3, 0.3, 0.3, 1.0);
     vec4 diffuse = vec4(0.7, 0.7,0.7,1.0);
-    vec4 baseColor = vec4(0.0);
-    switch(object) {
-        case 1: baseColor = vec4(1.0, 0.0, 0.0, 1.0); break;
-        case 2: baseColor = vec4(1.0, 1.0, 0.0, 1.0); break;
-        case 3: baseColor = vec4(0.2, 0.2, 0.9, 1.0); break;
-        case 4: baseColor = vec4(0.5, 0.8, 0.2, 1.0); break;
-        case 5: baseColor = vec4(1.0, 0.5, 0.0, 1.0); break;
-        case 6: baseColor = vec4(1.0, 0.5, 1.0, 1.0); break;
-    }
+    vec4 baseColor = vec4(baseCol,1.0);
+
     float specularPower = 28;
 
-/*
-    vec2 texCoord;
-    texCoord.y = acos(position.z/7)/PI;
-    texCoord.x = atan(position.x/position.y)/2.0/PI-0.25;
-
-    if (sign(position.x)>0){
-       texCoord.x+=0.5;
-       if (sign(position.y)>=0) texCoord.x+=0.50;
-    }
-    else{
-       texCoord.x+=0.5;
-        if (sign(position.y)>=0)texCoord.x+=0.50;;
-    }
-*/
-
-    // texCoord.x = position.x;
-    // texCoord.y = position.y;
-    // texCoord.xy = texCoord.xy*vec2(0.5,2.0);
     vec4 texColor=texture(texture0,texCoord.xy);
 
     vec3 ld = normalize( lightDirection );

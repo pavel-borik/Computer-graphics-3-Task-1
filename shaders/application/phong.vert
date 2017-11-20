@@ -3,9 +3,9 @@ in vec2 inPosition;
 out vec3 viewDirection, lightDirection, normal;
 out float dist;
 out vec4 position;
-uniform int object;
+uniform int object, lightMode;
 uniform mat4 modelMat, viewMat, projMat;
-uniform vec3 eyePos;
+uniform vec3 baseCol, lightPos, eyePos;
 const float PI = 3.1415926535897932384626433832795;
 out vec2 texCoord;
 out vec4 vertColor;
@@ -14,27 +14,27 @@ vec3 normalDiff (vec2 uv);
 
 void calculateLightPerVertex();
 void main() {
-    vec4 lightPosition = vec4(-10.0, 5.0, 2.0, 1.0);
     mat4 modelView = viewMat * modelMat;
-    mat4 mvp = projMat * viewMat * modelMat;
-    mat3 normalMat = transpose(inverse(mat3(modelView)));
     position = vec4(createObject(inPosition),1.0 );
 
     normal = normalDiff(inPosition);
-    //normal = (dot(normal,position.xyz) < 0.0) ? -normal : normal;
-    normal = normalMat * normal;
+
+    //fix for normal orientation
+    if(object==6)normal = (dot(normal,position.xyz) < 0.0) ? -normal : normal;
+
+    normal = transpose(inverse(mat3(modelView))) * normal;
 
     vec4 vObjectPosition =  modelView * position;
-    vec3 vLight = mat3(viewMat) * lightPosition.xyz;
+    vec3 vLight = mat3(viewMat) * lightPos;
     //vec3 vLight = lightPosition.xyz;
     lightDirection = vLight - vObjectPosition.xyz;
     viewDirection = -vObjectPosition.xyz;
 
     dist = length(lightDirection);
-	gl_Position = mvp * position;
+	gl_Position = projMat * viewMat * modelMat * position;
 	texCoord = 1-inPosition;
 
-	calculateLightPerVertex();
+	if(lightMode == 1) calculateLightPerVertex();
 }
 
 vec3 createObject (vec2 uv) {
@@ -78,8 +78,15 @@ vec3 createObject (vec2 uv) {
         case 6:
             s = 2* PI * uv.x;
             t = 2* PI * uv.y;
-            r = (1+max(sin(t),0))*2;
-            return vec3(r * sin(s), r * cos(s), 3-t);
+          //  r = (1+max(sin(t),0))*2;
+         //   return vec3(r * sin(s), r * cos(s), 3-t);
+
+            return vec3(3*cos(s), 5* cos(t)+0.5*sin(s),3* sin(t));
+         case 7:
+             s = 2* PI * uv.x;
+             t = 2* PI * uv.y;
+             r = (1+max(sin(t),0))*2;
+             return vec3(r * sin(s), r * cos(s), 3-t);
     }
     return vec3(0,0,0);
 }
@@ -97,18 +104,9 @@ void calculateLightPerVertex() {
     vec4 ambient = vec4(0.1,0.1, 0.1, 1.0);
     vec4 specular = vec4(0.3, 0.3, 0.3, 1.0);
     vec4 diffuse = vec4(0.7, 0.7,0.7,1.0);
-    vec4 baseColor = vec4(0.0);
-    switch(object) {
-        case 0: baseColor = vec4(0.7, 0.0, 0.5, 1.0); break;
-        case 1: baseColor = vec4(1.0, 0.0, 0.0, 1.0); break;
-        case 2: baseColor = vec4(1.0, 1.0, 0.0, 1.0); break;
-        case 3: baseColor = vec4(0.2, 0.2, 0.9, 1.0); break;
-        case 4: baseColor = vec4(0.5, 0.8, 0.2, 1.0); break;
-        case 5: baseColor = vec4(1.0, 0.5, 0.0, 1.0); break;
-        case 6: baseColor = vec4(1.0, 0.5, 1.0, 1.0); break;
-    }
-    float specularPower = 28;
+    vec4 baseColor = vec4(baseCol,1.0);
 
+    float specularPower = 28;
 
     vec3 ld = normalize( lightDirection );
     vec3 nd = normalize( normal );
@@ -135,7 +133,6 @@ void calculateLightPerVertex() {
         totalSpecular = specular * (pow(NDotH, specularPower));
 
     }
-
 
     vertColor = totalAmbient +att*(totalDiffuse + totalSpecular);
     if (spotEffect < (1 - spotCutOff)) {
