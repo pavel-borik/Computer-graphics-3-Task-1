@@ -3,20 +3,18 @@ in vec3 viewDirection, lightDirection, normal;
 in float dist;
 in vec4 position, vertColor;
 in vec2 texCoord;
-const float PI = 3.1415926535897932384626433832795;
 uniform sampler2D texture0;
 uniform int object, lightMode;
-uniform vec3 eyePos;
-uniform vec3 baseCol;
+uniform vec3 eyePos, lightPos, diffCol;
+const float PI = 3.1415926535897932384626433832795;
 out vec4 outColor;
 
 void main( void ) {
-    vec4 ambient = vec4(0.1,0.1, 0.1, 1.0);
-    vec4 specular = vec4(0.3, 0.3, 0.3, 1.0);
-    vec4 diffuse = vec4(0.7, 0.7,0.7,1.0);
-    vec4 baseColor = vec4(baseCol,1.0);
-
-    float specularPower = 28;
+    vec4 ambientLightColor = vec4(0.1,0.1, 0.1, 1.0);
+    vec4 matSpecular = vec4(0.9, 0.9, 0.9, 1.0);
+    vec4 lightColor = vec4(1.0);
+    vec4 matDiffuse = vec4(diffCol,1.0);
+    float specularPower = 50;
 
     vec4 texColor=texture(texture0,texCoord.xy);
 
@@ -24,59 +22,49 @@ void main( void ) {
     vec3 nd = normalize( normal );
     vec3 vd = normalize( viewDirection );
 
-    float spotCutOff = 0.5;
-    vec3 spotDirection = vec3(0,0,0);
-    float spotEffect = max(dot(normalize(spotDirection),normalize(-ld)),0);
-
     vec4 totalAmbient=vec4(0.0);
+
+    // Object 0 is textured
     if(object == 0) {
-        totalAmbient = ambient;
+        totalAmbient = ambientLightColor * texColor;
     } else {
-        totalAmbient = ambient * baseColor;
+        totalAmbient = ambientLightColor * matDiffuse;
     }
+
     vec4 totalDiffuse = vec4(0.0);
     vec4 totalSpecular = vec4(0.0);
     float att;
 
     float NDotL = dot(nd, ld);
     if (NDotL > 0.0){
-        //vec3 reflection = normalize( ( ( 2.0 * nd ) * NDotL ) - ld );
-        //float RDotV = max( 0.0, dot( reflection, vd ) );
-
+    //Blinn-Phong
         vec3 halfVector = normalize( ld + vd);
         float NDotH = max( 0.0, dot( nd, halfVector ) );
 
         if(object == 0) {
-            totalDiffuse = diffuse * NDotL;
+            totalDiffuse = NDotL * texColor * lightColor;
         } else {
-            totalDiffuse = diffuse * NDotL * baseColor;
+            totalDiffuse = NDotL * matDiffuse * lightColor;
         }
 
         att = 1.0 / (1.0 + 0.01*dist + 0.001*dist*dist);
-        totalSpecular = specular * (pow(NDotH, specularPower));
-        //totalSpecular = Specular * ( pow( RDotV, SpecularPower ) );
+
+        totalSpecular = matSpecular * (pow(NDotH, specularPower));
     }
 
-    if(object == 0) {
-        if (spotEffect < (1 - spotCutOff)) {
-            outColor = totalAmbient*texColor +att*(totalDiffuse*texColor + totalSpecular);
-        } else {
-            outColor = totalAmbient*texColor;
-        }
+    // Reflector coefs (+ blending)
+    float spotCutOff = 0.2;
+    vec3 spotDirection = vec3(0,0,-1);
+    float spotEffect = max(dot(normalize(spotDirection),normalize(-ld)),0);
+    float blend = clamp((spotEffect-spotCutOff)/(1-spotCutOff),0.0,1.0);
 
-       //outColor = totalAmbient*color +totalDiffuse*color + totalSpecular;
-       //outColor = color;
+    if (spotEffect > spotCutOff) {
+        outColor = mix(totalAmbient,totalAmbient + att*(totalDiffuse + totalSpecular),blend);
     } else {
-       outColor = totalAmbient +att*(totalDiffuse + totalSpecular);
-       if (spotEffect < (1 - spotCutOff)) {
-            outColor = totalAmbient +att*(totalDiffuse + totalSpecular);
-       } else {
-           outColor = totalAmbient;
-       }
-
+        outColor = totalAmbient;
     }
+    //outColor = totalAmbient +att*(totalDiffuse + totalSpecular);
 
+    // Computing light per vertex
     if(lightMode == 1) outColor = vertColor;
-    //outColor = totalAmbient*color +att*(totalDiffuse*color + totalSpecular);
-    //outColor = color;
 }

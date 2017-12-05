@@ -12,17 +12,12 @@ import org.jetbrains.annotations.NotNull;
 import transforms.Vec2D;
 
 public class MeshGenerator {
-    public static @NotNull OGLBuffers generateGrid(
+    public static @NotNull
+    OGLBuffers generateGrid(
             final @NotNull GL2GL3 gl,
             final int m, final int n,
             final @NotNull String shaderName) {
-/*
-        final List<Vec2D> vertices = new ArrayList<>();
-        for (int r = 0; r < m; r++)
-            for (int c = 0; c < n; c++) {
-                vertices.add(new Vec2D(c / (n - 1.0), r / (m - 1.0)));
-            }
-*/
+
         Seq<Vec2D> vertices = Stream.range(0, m).flatMap(
                 (final Integer r) -> Stream.range(0, n).map(
                         (final Integer c) ->
@@ -40,19 +35,6 @@ public class MeshGenerator {
                         )
                 )
         );
-/*
-        List<Integer> indices = new ArrayList<>();
-        for (int r = 0; r < m - 1; r++)
-            for (int c = 0; c < n - 1; c++) {
-                indices.add(r * n + c);
-                indices.add(r * n + c + 1);
-                indices.add((r + 1) * n + c);
-                indices.add((r + 1) * n + c);
-                indices.add(r * n + c + 1);
-                indices.add((r + 1) * n + c + 1);
-            }
-*/
-
 
         final OGLBuffers.Attrib[] attributes = {
                 new OGLBuffers.Attrib(shaderName, 2),
@@ -64,5 +46,56 @@ public class MeshGenerator {
                 attributes,
                 ToIntArray.convert(indices.toJavaList()));
     }
+
+    public static @NotNull OGLBuffers generateGridAsTriangleStrip(
+            final @NotNull GL2GL3 gl,
+            final int m, final int n,
+            final @NotNull String shaderName) {
+
+        float[] vertexBufferData = new float[2 * m * n];
+
+
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                vertexBufferData[2*(i*n+j)] = j/(float) (n-1);
+                vertexBufferData[2*(i*n+j)+1] = i/(float) (m-1);
+            }
+        }
+        int numStripsRequired = m - 1;
+        int numDegensRequired = 2 * (numStripsRequired - 1);
+        int verticesPerStrip = 2 * n;
+
+        int[] indexBufferData = new int[(verticesPerStrip * numStripsRequired)
+                + numDegensRequired];
+
+        int offset = 0;
+
+        for (int y = 0; y < m - 1; y++) {
+            if (y > 0) {
+                // Degenerate begin: repeat first vertex
+                indexBufferData[offset++] =  (y * n);
+            }
+
+            for (int x = 0; x < n; x++) {
+                // One part of the strip
+                indexBufferData[offset++] =  ((y * n) + x);
+                indexBufferData[offset++] =  (((y + 1) * n) + x);
+            }
+
+            if (y < m - 2) {
+                // Degenerate end: repeat last vertex
+                indexBufferData[offset++] =  (((y + 1) * n) + (n - 1));
+            }
+        }
+
+        OGLBuffers.Attrib[] attributes = {
+                new OGLBuffers.Attrib(shaderName, 2),
+        };
+
+        OGLBuffers buffers = new OGLBuffers(gl, vertexBufferData, attributes, indexBufferData);
+
+        return buffers;
+    }
+
 }
 

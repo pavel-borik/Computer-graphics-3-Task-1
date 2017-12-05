@@ -1,6 +1,7 @@
 #version 330
 in vec2 inPosition;
-out vec3 viewDirection, lightDirection, normal;
+out vec2 texCoords;
+out vec3 viewDirection, lightDirection, normal, viewVec, lightVec;
 out float dist;
 out vec4 position;
 uniform int texMode;
@@ -8,37 +9,25 @@ uniform mat4 modelMat, viewMat, projMat;
 uniform vec3 eyePos, lightPos;
 const float PI = 3.1415926535897932384626433832795;
 
-out vec2 texCoords;
-out vec3 viewVec, lightVec;
 vec3 createObject(vec2 uv);
 vec3 normalDiff (vec2 uv);
 
 void main() {
+
+    // Calculated in camera space
     mat4 modelView = viewMat * modelMat;
     position = vec4(createObject(inPosition),1.0 );
 
     normal = normalDiff(inPosition);
-    //normal = (dot(normal,position.xyz) < 0.0) ? -normal : normal;
     normal = transpose(inverse(mat3(modelView))) * normal;
 
-    vec3 p1 = vec3(position.x+0.05, position.y, 1.0);
-    p1.z = createObject(p1.xy).z;
-    vec3 p2 = vec3(position.x-0.05, position.y, 1.0);
-    p2.z = createObject(p2.xy).z;
-    vec3 t = (p1 - p2);
+    vec3 tangent = (createObject(inPosition+vec2(0.0001,0))-createObject(inPosition-vec2(0.0001,0)))/0.0001;
 
-    p1 = vec3(position.x, position.y+0.05, 1.0);
-    p1.z = createObject(p1.xy).z;
-    p2 = vec3(position.x, position.y-0.05, 1.0);
-    p2.z = createObject(p2.xy).z;
-    vec3 b = (p1 - p2);
-
-    vec3 vTangent =  mat3(modelView) * normalize(t.xyz);
-    vec3 vBinormal = mat3(modelView) * normalize(b.xyz);
-    vec3 vNormal = normal;
-    vBinormal = cross(normalize(vNormal), normalize(vTangent));
-
-    mat3 tbn = mat3(vTangent,vBinormal,normalize(vNormal));
+    vec3 vTangent =  mat3(modelView) * normalize(tangent.xyz);
+    vec3 vNormal = normalize(normal);
+    vec3 vBinormal = cross(normalize(vNormal), normalize(vTangent));
+    vTangent = cross(vBinormal, vNormal);
+    mat3 tbn = mat3(vTangent,vBinormal,vNormal);
 
     vec3 vLight = mat3(modelView) * lightPos;
     vec4 vObjectPosition =  modelView * position;
@@ -59,7 +48,7 @@ vec3 createObject (vec2 uv) {
     float t = PI * 2 * uv.x; //phi
     float r = 5;
     return vec3(20*uv.x,0,-20*uv.y);
-    return vec3(r * cos(s)*sin(t), r * cos(s)*cos(t), r * sin(s));
+    //return vec3(r * cos(s)*sin(t), r * cos(s)*cos(t), r * sin(s));
 }
 
 vec3 normalDiff (vec2 uv){

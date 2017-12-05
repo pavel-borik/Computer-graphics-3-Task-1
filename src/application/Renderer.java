@@ -12,22 +12,23 @@ import java.awt.event.*;
 public class Renderer implements GLEventListener, MouseListener,
 		MouseMotionListener, KeyListener {
 
-	OGLBuffers buffer, buffer2;
-	OGLTextRenderer textRenderer;
+	private OGLBuffers buffer, buffer2;
+	private OGLTextRenderer textRenderer;
 
-	int width, height, ox, oy;
-	int shaderProgram, shaderProgram2;
-	int locProjMat, locModelMat, locViewMat, locEye, locTexMode, locLightPos;
-	int locProjMat2, locModelMat2, locViewMat2, locEye2, locObj2, locLightMode2, locBaseCol2, locLightPos2;
-	int objSwitch = 0, shaderMode = 1, texturingMode = 0, lightMode = 0;
-	int polygonMode = GL2GL3.GL_FILL;
-	OGLTexture2D texture0, texture1, texture2, texture3;
-	OGLTexture2D.Viewer textureViewer;
+	private int width, height, ox, oy;
+	private int shaderProgram, shaderProgram2;
+	private int locProjMat, locModelMat, locViewMat, locEye, locTexMode, locLightPos;
+	private int locProjMat2, locModelMat2, locViewMat2, locEye2, locObj2, locLightMode2, locDiffCol2, locLightPos2;
+	private int objSwitch = 0, shaderMode = 1, texturingMode = 0, lightMode = 0;
+	private int polygonMode = GL2GL3.GL_FILL;
+	private OGLTexture2D texture0, texture1, texture2, texture3;
+	private OGLTexture2D.Viewer textureViewer;
 
-	Vec3D baseColor= new Vec3D(1,1,1);
-	Vec3D lightPos = new Vec3D(-20.0, 3.0, 2.0);
-	Camera cam = new Camera();
-	Mat4 model, proj;
+	private Vec3D lightPos = new Vec3D(10.0, 8.0, 13.0);
+	private Vec3D matDiffuseColor = new Vec3D(1,1,1);
+
+	private Camera cam = new Camera();
+	private Mat4 model, proj;
 
 	@Override
 	public void init(GLAutoDrawable glDrawable) {
@@ -41,8 +42,7 @@ public class Renderer implements GLEventListener, MouseListener,
 		shaderProgram = ShaderUtils.loadProgram(gl, "/application/textureMapping");
 		shaderProgram2 = ShaderUtils.loadProgram(gl, "/application/phong");
 
-		//buffer = GridFactory.generateGrid(gl, 50, 50, TopologyType.TRIANGLES);
-		buffer = MeshGenerator.generateGrid(gl, 40, 40,"inPosition");
+		buffer = MeshGenerator.generateGridAsTriangleStrip(gl, 40, 40,"inPosition");
 		buffer2 = MeshGenerator.generateGrid(gl, 30, 30,"inPosition");
 
 		locModelMat = gl.glGetUniformLocation(shaderProgram, "modelMat");
@@ -52,14 +52,13 @@ public class Renderer implements GLEventListener, MouseListener,
 		locTexMode = gl.glGetUniformLocation(shaderProgram, "texMode");
 		locLightPos = gl.glGetUniformLocation(shaderProgram, "lightPos");
 
-
 		locObj2 = gl.glGetUniformLocation(shaderProgram2, "object");
 		locLightMode2 = gl.glGetUniformLocation(shaderProgram2, "lightMode");
 		locModelMat2 = gl.glGetUniformLocation(shaderProgram2, "modelMat");
 		locViewMat2 = gl.glGetUniformLocation(shaderProgram2, "viewMat");
 		locProjMat2 = gl.glGetUniformLocation(shaderProgram2, "projMat");
 		locEye2 = gl.glGetUniformLocation(shaderProgram2, "eyePos");
-		locBaseCol2 = gl.glGetUniformLocation(shaderProgram2, "baseCol");
+		locDiffCol2 = gl.glGetUniformLocation(shaderProgram2, "diffCol");
 		locLightPos2 = gl.glGetUniformLocation(shaderProgram2, "lightPos");
 
 		texture0 = new OGLTexture2D(gl, "/textures/bricks.jpg");
@@ -97,14 +96,13 @@ public class Renderer implements GLEventListener, MouseListener,
 		gl.glUniform1i(locTexMode, texturingMode);
 		gl.glUniform3fv(locLightPos, 1, ToFloatArray.convert(lightPos), 0);
 
-
 		texture0.bind(shaderProgram, "texture0", 0);
 		texture1.bind(shaderProgram, "texture1", 1);
 		texture2.bind(shaderProgram, "texture2", 2);
 
 		gl.glPolygonMode(GL2GL3.GL_FRONT_AND_BACK, polygonMode);
 
-		if(shaderMode == 1)buffer.draw(GL2GL3.GL_TRIANGLES, shaderProgram);
+		if(shaderMode == 1)buffer.draw(GL2GL3.GL_TRIANGLE_STRIP, shaderProgram);
 
 		gl.glUseProgram(shaderProgram2);
 		gl.glUniformMatrix4fv(locModelMat2, 1, false,
@@ -116,19 +114,12 @@ public class Renderer implements GLEventListener, MouseListener,
 		gl.glUniform1i(locObj2, objSwitch);
 		gl.glUniform1i(locLightMode2, lightMode);
 		gl.glUniform3fv(locEye2, 1, ToFloatArray.convert(cam.getEye()), 0);
-		gl.glUniform3fv(locBaseCol2, 1, ToFloatArray.convert(baseColor), 0);
+		gl.glUniform3fv(locDiffCol2, 1, ToFloatArray.convert(matDiffuseColor), 0);
 		gl.glUniform3fv(locLightPos2, 1, ToFloatArray.convert(lightPos), 0);
-
-
-
 		texture3.bind(shaderProgram2, "texture0", 3);
-
 		gl.glPolygonMode(GL2GL3.GL_FRONT_AND_BACK, polygonMode);
 
 		if(shaderMode == 0) buffer2.draw(GL2GL3.GL_TRIANGLES, shaderProgram2);
-		//buffer.draw(GL2GL3.GL_TRIANGLE_STRIP, shaderProgram);
-
-		//textureViewer.view(texture0, -1, -1, 0.5);
 
 		drawStrings();
 	}
@@ -172,6 +163,8 @@ public class Renderer implements GLEventListener, MouseListener,
 		if(SwingUtilities.isLeftMouseButton(e)) {
 			cam = cam.addAzimuth((double) Math.PI * (ox - e.getX()) / width)
 					.addZenith((double) Math.PI * (e.getY() - oy) / width);
+
+
 		}
 		if(SwingUtilities.isRightMouseButton(e)) {
 			model = model.mul(new Mat4RotZ((ox - e.getX())*0.02));
@@ -200,39 +193,24 @@ public class Renderer implements GLEventListener, MouseListener,
 			case KeyEvent.VK_A:
 				cam = cam.left(0.5);
 				break;
-			case KeyEvent.VK_CONTROL:
-				cam = cam.down(0.5);
-				break;
-			case KeyEvent.VK_SHIFT:
-				cam = cam.up(0.5);
-				break;
-			case KeyEvent.VK_SPACE:
-				cam = cam.withFirstPerson(!cam.getFirstPerson());
-				break;
-			case KeyEvent.VK_R:
-				cam = cam.mulRadius(0.9f);
-				break;
-			case KeyEvent.VK_F:
-				cam = cam.mulRadius(1.1f);
-				break;
 			case KeyEvent.VK_E:
-				objSwitch = (objSwitch + 1) % 8;
+				objSwitch = (objSwitch + 1) % 9;
 				switch(objSwitch) {
-					case 0: baseColor = new Vec3D(1.0, 1.0, 1.0); break;
-					case 1: baseColor = new Vec3D(1.0, 0.0, 0.0); break;
-					case 2: baseColor = new Vec3D(1.0, 1.0, 0.0); break;
-					case 3: baseColor = new Vec3D(0.2, 0.2, 0.9); break;
-					case 4: baseColor = new Vec3D(0.5, 0.8, 0.2); break;
-					case 5: baseColor = new Vec3D(1.0, 0.5, 0.0); break;
-					case 6: baseColor = new Vec3D(1.0, 0.5, 1.0); break;
-					case 7: baseColor = new Vec3D(1.0, 0.5, 0.0); break;
+					case 0: matDiffuseColor = new Vec3D(1.0, 1.0, 1.0); break;
+					case 1: matDiffuseColor = new Vec3D(1.0, 0.0, 0.0); break;
+					case 2: matDiffuseColor = new Vec3D(1.0, 1.0, 0.0); break;
+					case 3: matDiffuseColor = new Vec3D(0.2, 0.2, 0.9); break;
+					case 4: matDiffuseColor = new Vec3D(0.5, 0.8, 0.2); break;
+					case 5: matDiffuseColor = new Vec3D(1.0, 0.5, 0.0); break;
+					case 6: matDiffuseColor = new Vec3D(1.0, 0.5, 1.0); break;
+					case 7: matDiffuseColor = new Vec3D(1.0, 0.5, 0.0); break;
 				}
 				break;
 			case KeyEvent.VK_J:
-				model = model.mul(new Mat4Transl(0,-.5,0));
+				model = model.mul(new Mat4Transl(-.5,0,0));
 				break;
 			case KeyEvent.VK_K:
-				model = model.mul(new Mat4Transl(0,.5,0));
+				model = model.mul(new Mat4Transl(.5,0,0));
 				break;
 			case KeyEvent.VK_O:
 				model = model.mul(new Mat4RotX(0.08));
@@ -248,17 +226,13 @@ public class Renderer implements GLEventListener, MouseListener,
 				break;
 			case KeyEvent.VK_T:
 				texturingMode = (texturingMode + 1) % 2;
-				System.out.println(texturingMode);
 				break;
 			case KeyEvent.VK_L:
 				lightMode = (lightMode + 1) % 2;
 				break;
 			case KeyEvent.VK_N:
-				lightPos = lightPos.mul(new Mat3RotZ(0.08));
-				System.out.println(lightPos.toString());
+				lightPos = lightPos.mul(new Mat3RotZ(0.1));
 				break;
-
-
 		}
 	}
 
@@ -281,7 +255,7 @@ public class Renderer implements GLEventListener, MouseListener,
 			case 0:
 				textRenderer.drawStr2D(3, height - 15, "PGRF3 - task 1 | Controls: [LMB] camera, " +
 						"[WASD] camera movement, [V] change shader, [B] fill mode, [L] light mode, [E] change object, [OP] rotateX, [JK] translateX");
-				textRenderer.drawStr2D(148, height - 30, "[RMB] rotateZ");
+				textRenderer.drawStr2D(148, height - 30, "[RMB] rotateZ, [N] rotateLightZ");
 
 				if(lightMode == 0) textRenderer.drawStr2D(width - 895, 3, "Light computed per pixel");
 				if(lightMode == 1) textRenderer.drawStr2D(width - 895, 3, "Light computed per vertex");
@@ -289,7 +263,7 @@ public class Renderer implements GLEventListener, MouseListener,
 			case 1:
 				textRenderer.drawStr2D(3, height - 15, "PGRF3 - task 1 | Controls: [LMB] camera, " +
 						"[WASD] camera movement, [V] change shader, [B] fill mode, [T] texturing mode, [OP] rotateX, [JK] translateX");
-				textRenderer.drawStr2D(148, height - 30, "[RMB] rotateZ");
+				textRenderer.drawStr2D(148, height - 30, "[RMB] rotateZ, [N] rotateLightZ");
 
 				if(texturingMode == 0) textRenderer.drawStr2D(width - 895, 3, "Parallax mapping");
 				if(texturingMode == 1) textRenderer.drawStr2D(width - 895, 3, "Normal mapping");
