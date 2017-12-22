@@ -33,7 +33,7 @@ void main( void ) {
 
     vec4 totalDiffuse = vec4(0.0);
     vec4 totalSpecular = vec4(0.0);
-    float att;
+    float att = 1.0 / (1.0 + 0.01*dist + 0.001*dist*dist);
 
     float NDotL = dot(nd, ld);
     if (NDotL > 0.0){
@@ -47,7 +47,6 @@ void main( void ) {
             totalDiffuse = NDotL * matDiffuse * lightColor;
         }
 
-        att = 1.0 / (1.0 + 0.01*dist + 0.001*dist*dist);
 
         totalSpecular = matSpecular * (pow(NDotH, specularPower));
     }
@@ -63,7 +62,6 @@ void main( void ) {
     } else {
         outColor = totalAmbient;
     }
-    //outColor = totalAmbient +att*(totalDiffuse + totalSpecular);
 
     // Computing light per vertex
     if(lightMode == 1) outColor = vertColor;

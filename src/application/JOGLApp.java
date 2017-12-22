@@ -31,7 +31,7 @@ public class JOGLApp {
 			canvas.addMouseMotionListener(ren);
 			canvas.addKeyListener(ren);
 	    	canvas.setSize( 900, 600 );
-	    	
+
 	    	testFrame.add(canvas);
 			
 	        //shutdown the program on windows close event

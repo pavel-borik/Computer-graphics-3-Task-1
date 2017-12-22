@@ -22,7 +22,6 @@ public class Renderer implements GLEventListener, MouseListener,
 	private int objSwitch = 0, shaderMode = 1, texturingMode = 0, lightMode = 0;
 	private int polygonMode = GL2GL3.GL_FILL;
 	private OGLTexture2D texture0, texture1, texture2, texture3;
-	private OGLTexture2D.Viewer textureViewer;
 
 	private Vec3D lightPos = new Vec3D(10.0, 8.0, 13.0);
 	private Vec3D matDiffuseColor = new Vec3D(1,1,1);
@@ -73,7 +72,6 @@ public class Renderer implements GLEventListener, MouseListener,
 		model = new Mat4Identity();
 
 		gl.glEnable(GL2GL3.GL_DEPTH_TEST);
-		textureViewer = new OGLTexture2D.Viewer(gl);
 	}
 
 	@Override
@@ -265,8 +263,8 @@ public class Renderer implements GLEventListener, MouseListener,
 						"[WASD] camera movement, [V] change shader, [B] fill mode, [T] texturing mode, [OP] rotateX, [JK] translateX");
 				textRenderer.drawStr2D(148, height - 30, "[RMB] rotateZ, [N] rotateLightZ");
 
-				if(texturingMode == 0) textRenderer.drawStr2D(width - 895, 3, "Parallax mapping");
-				if(texturingMode == 1) textRenderer.drawStr2D(width - 895, 3, "Normal mapping");
+				if(texturingMode == 1) textRenderer.drawStr2D(width - 895, 3, "Parallax mapping");
+				if(texturingMode == 0) textRenderer.drawStr2D(width - 895, 3, "Normal mapping");
 				break;
 		}
 

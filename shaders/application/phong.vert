@@ -20,7 +20,7 @@ void main() {
     normal = normalDiff(inPosition);
 	gl_Position = projMat * viewMat * modelMat * position;
 
-    //fix for normal orientation of the 6th object
+    //fix for normal orientation of the Oval "strip" object
     if(object==6)normal = (dot(normal,position.xyz) < 0.0) ? -normal : normal;
 
     normal = transpose(inverse(mat3(modelMat))) * normal;
@@ -48,8 +48,7 @@ vec3 createObject (vec2 uv) {
             s = 2* PI * uv.x;
             t = 2* PI * uv.y;
             r = t;
-            return vec3(r * cos(s), r * sin(s) ,2*sin(t));
-
+            return vec3(1-(r * cos(s)), r * sin(s) ,2*sin(t));
         // Trumpet - Parametric XYZ
         case 2:
              s = 2*PI*uv.x;
@@ -77,7 +76,7 @@ vec3 createObject (vec2 uv) {
             s = 2* PI * uv.x;
             t = 2* PI * uv.y;
             return vec3(3*cos(s), 5* cos(t)+0.5*sin(s),3* sin(t));
-        // Own shape
+        // Oval "strip"
         case 7:
              s = 2* PI * uv.x;
              t = 2* PI * uv.y;
@@ -93,11 +92,9 @@ vec3 createObject (vec2 uv) {
 
 vec3 normalDiff (vec2 uv){
     float delta = 0.0001;
-    vec3 dzdu = (createObject(uv+vec2(delta,0))-createObject(uv-vec2(delta,0)))/delta;
-    vec3 dzdv = (createObject(uv+vec2(0,delta))-createObject(uv-vec2(0,delta)))/delta;
+    vec3 dzdu = (createObject(uv+vec2(delta,0))-createObject(uv-vec2(delta,0)))/(2*delta);
+    vec3 dzdv = (createObject(uv+vec2(0,delta))-createObject(uv-vec2(0,delta)))/(2*delta);
 
-    // A fix required for Sombrero shape
-    if(object == 1) return cross(dzdv,dzdu);
     return cross(dzdu,dzdv);
 }
 
@@ -127,6 +124,7 @@ void calculateLightPerVertex() {
         totalSpecular = matSpecular * (pow(NDotH, specularPower));
     }
 
+    // Reflector coefs
     float spotCutOff = 0.2;
     vec3 spotDirection = vec3(0,0,-1);
     float spotEffect = max(dot(normalize(spotDirection),normalize(-ld)),0);
